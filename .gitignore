@@ -1,4 +1,4 @@
-﻿# =============================
+# =============================
 # Dependencies
 # =============================
 node_modules/
@@ -14,14 +14,16 @@ build/
 out/
 
 # =============================
-# Environment files (secrets)
-# =============================
+# Environment files (secrets) — never commit real .env files
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 .env.production
+# But DO commit .env.example (safe — no real secrets)
+!.env.example
+!**/.env.example
 
 # =============================
 # Prisma generated / dev DB
