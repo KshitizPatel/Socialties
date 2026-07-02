@@ -1,8 +1,11 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
-  // Keep minimal config - Turbopack is enabled by default in Next.js 16+
-  // Don't set experimental.turbo as it causes build errors in deployment environments
+  // Fix Turbopack workspace root resolution in monorepo
+  turbopack: {
+    root: path.resolve(__dirname, ".."),
+  },
 };
 
 export default nextConfig;
