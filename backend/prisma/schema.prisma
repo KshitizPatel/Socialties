@@ -122,6 +122,20 @@ model Campaign {
   updatedAt     DateTime        @updatedAt
   deletedAt     DateTime?
 
+  // Extended fields
+  title                String?
+  client               String?
+  budget               Float?
+  duration             String?
+  results              String?
+  roi                  String?
+  category             String?
+  tags                 String[]
+  ctaText              String?
+  ctaLink              String?
+  publishDate          DateTime?
+  coverImagePublicId   String?   // upload public id
+
   @@index([status])
   @@index([type])
   @@index([featured])
@@ -171,6 +185,13 @@ model TeamMember {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   deletedAt   DateTime?
+
+  // Extended fields
+  phone           String?
+  department      String?
+  portfolio       String?
+  experience      String?
+  photoPublicId   String?   // upload public id (cloudinary or local)
 }
 
 // ─────────────────────────────────────────────
@@ -322,7 +343,15 @@ model MediaLibrary {
   createdAt          DateTime  @default(now())
   deletedAt          DateTime?
 
+  // Folder & tags support
+  folderId           String?
+  folder             MediaFolder? @relation(fields: [folderId], references: [id])
+  tags               String[]
+  title              String?
+  altText            String?
+
   @@index([type])
+  @@index([folderId])
 }
 
 model Gallery {
@@ -338,16 +367,25 @@ model Gallery {
 // ─────────────────────────────────────────────
 
 model HomepageSettings {
-  id                String   @id @default(uuid())
-  heroHeadline      String
-  heroSubheading    String
-  showreelUrl       String?
-  statCampaigns     Int      @default(0)
-  statBrands        Int      @default(0)
-  statCreators      Int      @default(0)
-  statReach         BigInt   @default(0)
-  trustedBrandLogos Json     // [{ name, logoUrl }]
-  updatedAt         DateTime @updatedAt
+  id                   String   @id @default(uuid())
+  heroHeadline         String
+  heroSubheading       String
+  heroEyebrow          String?
+  heroPrimaryBtnText   String?
+  heroPrimaryBtnHref   String?
+  heroSecondaryBtnText String?
+  heroSecondaryBtnHref String?
+  showreelUrl          String?
+  statCampaigns        Int      @default(0)
+  statBrands           Int      @default(0)
+  statCreators         Int      @default(0)
+  statReach            BigInt   @default(0)
+  trustedBrandLogos    Json     // [{ name, logoUrl }]
+  // WhySection intro card
+  whyHeadline          String?
+  whySubtext           String?
+  whyBadges            Json?    // [{ label, color }]
+  updatedAt            DateTime @updatedAt
 }
 
 model SeoSetting {
@@ -373,4 +411,121 @@ model ContactMessage {
 
   @@index([isRead])
   @@index([createdAt])
+}
+
+// ─────────────────────────────────────────────
+// ADDITIONAL CMS MODELS
+// ─────────────────────────────────────────────
+
+model CompanyProfile {
+  id                 String   @id @default(uuid())
+  companyName        String
+  about              String?
+  mission            String?
+  vision             String?
+  history            String?
+  legalName          String?
+  address            String?
+  registrationDetails String?
+  email              String?
+  phone              String?
+  whatsapp           String?
+  workingHours       String?
+  googleMapsEmbedUrl String?
+  latitude           Float?
+  longitude          Float?
+  instagram          String?
+  linkedin           String?
+  facebook           String?
+  twitter            String?
+  youtube            String?
+  updatedAt          DateTime @updatedAt
+}
+
+model NavbarSettings {
+  id           String   @id @default(uuid())
+  logoUrl      String?
+  faviconUrl   String?
+  navItems     Json     // Array of { label: string, href: string, isExternal: boolean, show: boolean, subItems?: Array }
+  updatedAt    DateTime @updatedAt
+}
+
+model FooterSettings {
+  id             String   @id @default(uuid())
+  quickLinks     Json     // Array of { label: string, href: string }
+  copyrightText  String?
+  description    String?
+  showSocialIcons Boolean  @default(true)
+  updatedAt      DateTime @updatedAt
+}
+
+model SystemSettings {
+  id                 String   @id @default(uuid())
+  maintenanceMode    Boolean  @default(false)
+  bannerText         String?
+  showBanner         Boolean  @default(false)
+  primaryColor       String   @default("#CCFF00") // default Socialties Lime
+  updatedAt          DateTime @updatedAt
+}
+
+model MediaFolder {
+  id        String         @id @default(uuid())
+  name      String         @unique
+  mediaList MediaLibrary[]
+  createdAt DateTime       @default(now())
+}
+
+// ─────────────────────────────────────────────
+// DYNAMIC CMS SECTIONS
+// ─────────────────────────────────────────────
+
+model FaqItem {
+  id        String   @id @default(uuid())
+  question  String
+  answer    String
+  sortOrder Int      @default(0)
+  isVisible Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model WhyCard {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  icon        String   // lucide icon name
+  sortOrder   Int      @default(0)
+  isVisible   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CtaSection {
+  id        String   @id @default(uuid())
+  key       String   @unique  // brands_banner | creators_banner | final_band
+  headline  String
+  subtext   String?
+  badge     String?
+  ctaText   String?
+  ctaHref   String?
+  ctaText2  String?
+  ctaHref2  String?
+  variant   String   @default("dark")  // dark | lime | gradient
+  isVisible Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+}
+
+model UploadedFile {
+  id           String   @id @default(uuid())
+  originalName String
+  filename     String   @unique
+  url          String
+  publicId     String   @unique
+  mimeType     String
+  sizeBytes    Int
+  folder       String   @default("general")
+  uploadedById String?
+  createdAt    DateTime @default(now())
+
+  @@index([folder])
 }

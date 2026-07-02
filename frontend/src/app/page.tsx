@@ -6,9 +6,9 @@ import CampaignsPreview from "@/components/home/CampaignsPreview";
 import TestimonialsSection from "@/components/home/TestimonialsSection";
 import FAQSection from "@/components/home/FAQSection";
 import CTASection from "@/components/home/CTASection";
+import ScrollConnectionSVGWrapper from "@/components/home/ScrollConnectionSVGWrapper";
 
-// Force Next.js to dynamically fetch data and bypass cache if needed, or revalidate
-export const revalidate = 60; // Revalidate homepage every 60 seconds
+export const revalidate = 60;
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -23,21 +23,29 @@ async function fetchApi(path: string) {
 }
 
 export default async function Home() {
-  const [settings, services, featuredCampaignsRaw, testimonials] = await Promise.all([
+  const [
+    settings,
+    services,
+    featuredCampaignsRaw,
+    testimonials,
+    faqs,
+    whyCards,
+    ctaSectionsRaw,
+    company,
+  ] = await Promise.all([
     fetchApi("/api/settings"),
     fetchApi("/api/public/services"),
     fetchApi("/api/campaigns"),
     fetchApi("/api/public/testimonials"),
+    fetchApi("/api/public/faq"),
+    fetchApi("/api/public/why-cards"),
+    fetchApi("/api/public/cta-sections"),
+    fetchApi("/api/public/company"),
   ]);
 
   const defaultHeadline = "Where Brands Meet Real Influence.";
   const defaultSubheading = "We pair data-driven strategy with authentic storytelling to take your brand from just online to absolutely unforgettable.";
-  const defaultStats = {
-    campaigns: 150,
-    brands: 50,
-    creators: 500,
-    reach: "50000000",
-  };
+  const defaultStats = { campaigns: 150, brands: 50, creators: 500, reach: "50000000" };
   const defaultLogos = [
     { name: "Amazon", logoUrl: "/brands/amazon.svg" },
     { name: "Paytm", logoUrl: "/brands/paytm.svg" },
@@ -49,21 +57,18 @@ export default async function Home() {
   const heroHeadline = settings?.heroHeadline || defaultHeadline;
   const heroSubheading = settings?.heroSubheading || defaultSubheading;
   const stats = settings
-    ? {
-        campaigns: settings.statCampaigns,
-        brands: settings.statBrands,
-        creators: settings.statCreators,
-        reach: settings.statReach,
-      }
+    ? { campaigns: settings.statCampaigns, brands: settings.statBrands, creators: settings.statCreators, reach: settings.statReach }
     : defaultStats;
 
   const trustedLogos = settings?.trustedBrandLogos ?? defaultLogos;
 
-  // Only show featured campaigns (take 4)
-  const featuredCampaigns = (featuredCampaignsRaw ?? [])
-    .filter((c: any) => c.featured)
-    .slice(0, 4);
+  const heroPrimaryBtnText = settings?.heroPrimaryBtnText || null;
+  const heroPrimaryBtnHref = settings?.heroPrimaryBtnHref || null;
+  const heroSecondaryBtnText = settings?.heroSecondaryBtnText || null;
+  const heroSecondaryBtnHref = settings?.heroSecondaryBtnHref || null;
+  const heroEyebrow = settings?.heroEyebrow || null;
 
+  const featuredCampaigns = (featuredCampaignsRaw ?? []).filter((c: any) => c.featured).slice(0, 4);
 
   return (
     <div className="space-y-4">
@@ -72,28 +77,41 @@ export default async function Home() {
         headline={heroHeadline}
         subheading={heroSubheading}
         stats={stats}
+        primaryBtnText={heroPrimaryBtnText}
+        primaryBtnHref={heroPrimaryBtnHref}
+        secondaryBtnText={heroSecondaryBtnText}
+        secondaryBtnHref={heroSecondaryBtnHref}
+        eyebrow={heroEyebrow}
       />
 
       {/* 2. Trust Marquee */}
       <TrustMarquee logos={trustedLogos} />
 
       {/* 3. Services Grid */}
-      <ServicesSection services={services} />
+      <ServicesSection services={services ?? []} />
+
+      {/* 3.5 Scroll-linked SVG Connection Animation */}
+      <ScrollConnectionSVGWrapper />
 
       {/* 4. Why Socialties Section */}
-      <WhySection />
+      <WhySection whyCards={whyCards} settings={settings} />
 
       {/* 5. Featured Campaigns */}
       <CampaignsPreview campaigns={featuredCampaigns} />
 
       {/* 6. Testimonials Carousel */}
-      <TestimonialsSection testimonials={testimonials} />
+      <TestimonialsSection testimonials={testimonials ?? []} />
 
       {/* 7. FAQ Accordion */}
-      <FAQSection />
+      <FAQSection faqs={faqs} />
 
       {/* 8. Split CTA Banner & Final Contact Band */}
-      <CTASection />
+      <CTASection
+        ctaSections={ctaSectionsRaw}
+        companyPhone={company?.phone}
+        companyWhatsapp={company?.whatsapp}
+        companyEmail={company?.email}
+      />
     </div>
   );
 }

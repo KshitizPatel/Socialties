@@ -130,7 +130,7 @@ export default async function CampaignDetailPage({ params }: Props) {
             <span className="text-xs font-semibold uppercase tracking-wider">Platforms</span>
           </div>
           <div className="flex items-center gap-2 pt-0.5">
-            {campaign.platforms.map((platform) => (
+            {campaign.platforms.map((platform: string) => (
               <div
                 key={platform}
                 className="flex items-center space-x-1.5 px-2.5 py-1 bg-background border border-border rounded-lg text-xs"
@@ -199,7 +199,7 @@ export default async function CampaignDetailPage({ params }: Props) {
             Media Gallery
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-            {campaign.images.map((image) => (
+            {campaign.images.map((image: any) => (
               <div
                 key={image.id}
                 className="relative aspect-square rounded-2xl overflow-hidden border border-border bg-bg-elevated hover:-translate-y-1 transition-transform"
@@ -213,7 +213,7 @@ export default async function CampaignDetailPage({ params }: Props) {
               </div>
             ))}
 
-            {campaign.videos.map((video) => (
+            {campaign.videos.map((video: any) => (
               <div
                 key={video.id}
                 className="relative aspect-square rounded-2xl overflow-hidden border border-border bg-bg-elevated hover:-translate-y-1 transition-transform"

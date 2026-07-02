@@ -4,34 +4,30 @@ import { useState } from "react";
 import { Plus, Minus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const faqs = [
-  {
-    question: "How do you select influencers for my campaign?",
-    answer: "We use a mix of data analysis and manual screening. We evaluate target audience alignment, historical performance metrics, real vs bot follower ratios, brand safety, and engagement quality to curate a highly optimized creator shortlist.",
-  },
-  {
-    question: "What is your pricing model?",
-    answer: "Our pricing depends on the campaign scale, objectives, and creator tiers involved. We operate on project-based management fees or retainer options with zero hidden costs or markups on creator rates.",
-  },
-  {
-    question: "How do you track campaign performance?",
-    answer: "We provide comprehensive live performance dashboards and post-campaign analytical audits tracking CTRs, direct sales/conversions, cost-per-acquisition (CPA), return on ad spend (ROAS), and real engagement reach.",
-  },
-  {
-    question: "I am a creator, how do I apply to join Socialties?",
-    answer: "Simple! Head over to our Creators page, fill out the application form, link your active social handles, and upload your latest media kit. Our creator relations team will review your application within 3-5 business days.",
-  },
-  {
-    question: "How long does it take to launch an influencer campaign?",
-    answer: "For standard gifting or product promotion campaigns, we can go live within 2-3 weeks from the brief sign-off, which includes influencer sourcing, agreement contracts, content review, and posting.",
-  },
-  {
-    question: "Do you handle paid advertising along with influencer campaigns?",
-    answer: "Yes, absolutely. We run performance ads using creator content (creator-licensing whitelist ads) on Meta and TikTok/Google, which consistently drives 2-3x higher conversion compared to standard brand ads.",
-  },
+interface FaqItem {
+  id: string;
+  question: string;
+  answer: string;
+  sortOrder: number;
+  isVisible: boolean;
+}
+
+// Hardcoded fallback used when DB has no FAQs yet
+const FALLBACK_FAQS: FaqItem[] = [
+  { id: "1", question: "How do you select influencers for my campaign?", answer: "We use a mix of data analysis and manual screening. We evaluate target audience alignment, historical performance metrics, real vs bot follower ratios, brand safety, and engagement quality to curate a highly optimized creator shortlist.", sortOrder: 0, isVisible: true },
+  { id: "2", question: "What is your pricing model?", answer: "Our pricing depends on the campaign scale, objectives, and creator tiers involved. We operate on project-based management fees or retainer options with zero hidden costs or markups on creator rates.", sortOrder: 1, isVisible: true },
+  { id: "3", question: "How do you track campaign performance?", answer: "We provide comprehensive live performance dashboards and post-campaign analytical audits tracking CTRs, direct sales/conversions, cost-per-acquisition (CPA), return on ad spend (ROAS), and real engagement reach.", sortOrder: 2, isVisible: true },
+  { id: "4", question: "I am a creator, how do I apply to join Socialties?", answer: "Simple! Head over to our Creators page, fill out the application form, link your active social handles, and upload your latest media kit. Our creator relations team will review your application within 3-5 business days.", sortOrder: 3, isVisible: true },
+  { id: "5", question: "How long does it take to launch an influencer campaign?", answer: "For standard gifting or product promotion campaigns, we can go live within 2-3 weeks from the brief sign-off, which includes influencer sourcing, agreement contracts, content review, and posting.", sortOrder: 4, isVisible: true },
+  { id: "6", question: "Do you handle paid advertising along with influencer campaigns?", answer: "Yes, absolutely. We run performance ads using creator content (creator-licensing whitelist ads) on Meta and TikTok/Google, which consistently drives 2-3x higher conversion compared to standard brand ads.", sortOrder: 5, isVisible: true },
 ];
 
-export default function FAQSection() {
+interface Props {
+  faqs?: FaqItem[] | null;
+}
+
+export default function FAQSection({ faqs }: Props) {
+  const items = (faqs && faqs.length > 0) ? faqs : FALLBACK_FAQS;
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const toggle = (idx: number) => {
@@ -50,12 +46,12 @@ export default function FAQSection() {
       </div>
 
       <div className="space-y-4">
-        {faqs.map((faq, idx) => {
+        {items.map((faq, idx) => {
           const isOpen = openIndex === idx;
 
           return (
             <div
-              key={idx}
+              key={faq.id}
               className="bg-bg-elevated border border-border rounded-2xl overflow-hidden transition-colors"
             >
               <button

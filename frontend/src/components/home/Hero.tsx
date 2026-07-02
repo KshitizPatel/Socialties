@@ -8,6 +8,11 @@ import { motion } from "framer-motion";
 interface HeroProps {
   headline: string;
   subheading: string;
+  eyebrow?: string | null;
+  primaryBtnText?: string | null;
+  primaryBtnHref?: string | null;
+  secondaryBtnText?: string | null;
+  secondaryBtnHref?: string | null;
   stats: {
     campaigns: number;
     brands: number;
@@ -16,7 +21,7 @@ interface HeroProps {
   };
 }
 
-export default function Hero({ headline, subheading, stats }: HeroProps) {
+export default function Hero({ headline, subheading, stats, eyebrow, primaryBtnText, primaryBtnHref, secondaryBtnText, secondaryBtnHref }: HeroProps) {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -64,7 +69,7 @@ export default function Hero({ headline, subheading, stats }: HeroProps) {
           className="inline-flex items-center space-x-2 bg-brand-ink-soft/80 border border-border/10 px-4 py-2 rounded-full text-xs font-semibold tracking-wider text-brand-lime uppercase backdrop-blur-sm"
         >
           <Sparkles size={12} className="animate-spin [animation-duration:4s]" />
-          <span>India's Influencer Marketing Partner</span>
+          <span>{eyebrow || "India's Influencer Marketing Partner"}</span>
         </motion.div>
 
         {/* Headline */}
@@ -95,17 +100,17 @@ export default function Hero({ headline, subheading, stats }: HeroProps) {
           className="flex flex-col sm:flex-row items-center justify-center gap-4"
         >
           <Link
-            href="/brands"
+            href={primaryBtnHref || "/brands"}
             className="w-full sm:w-auto px-8 py-4 font-bold uppercase tracking-wider rounded-xl bg-brand-lime hover:bg-brand-lime-dark text-black transition-all flex items-center justify-center space-x-2 shadow-lg shadow-brand-lime/10 group"
           >
-            <span>Launch a Campaign</span>
+            <span>{primaryBtnText || "Launch a Campaign"}</span>
             <ArrowRight size={16} className="transform group-hover:translate-x-1 transition-transform" />
           </Link>
           <Link
-            href="/creators"
+            href={secondaryBtnHref || "/creators"}
             className="w-full sm:w-auto px-8 py-4 font-bold uppercase tracking-wider rounded-xl border border-white/20 hover:border-white/40 text-white transition-all bg-white/5 backdrop-blur-sm flex items-center justify-center space-x-2 hover:bg-white/10"
           >
-            Join as Creator
+            {secondaryBtnText || "Join as Creator"}
           </Link>
         </motion.div>
 

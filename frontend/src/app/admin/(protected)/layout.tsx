@@ -10,6 +10,14 @@ import {
   Settings,
   LogOut,
   User,
+  Globe,
+  Building2,
+  FileText,
+  Megaphone,
+  Monitor,
+  Star,
+  Layers,
+  Image,
 } from "lucide-react";
 
 export default async function AdminLayout({
@@ -18,11 +26,7 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
-
-  // If not logged in, redirect to login page
-  if (!session) {
-    redirect("/admin/login");
-  }
+  if (!session) redirect("/admin/login");
 
   const handleLogout = async () => {
     "use server";
@@ -35,35 +39,84 @@ export default async function AdminLayout({
     { label: "Team Members", href: "/admin/team", icon: Users2 },
     { label: "Brand Leads", href: "/admin/brand-leads", icon: Inbox },
     { label: "Creator Applications", href: "/admin/creator-applications", icon: UserCheck },
-    { label: "Settings", href: "/admin/settings", icon: Settings },
+    { label: "Testimonials", href: "/admin/testimonials", icon: Star },
+    { label: "Services", href: "/admin/services", icon: Layers },
+    { label: "Media Library", href: "/admin/media", icon: Image },
   ];
+
+  const contentItems = [
+    { label: "FAQ", href: "/admin/faq", icon: FileText },
+    { label: "Why Section", href: "/admin/why-section", icon: Globe },
+    { label: "CTA Sections", href: "/admin/cta-sections", icon: Megaphone },
+  ];
+
+  const settingsItems = [
+    { label: "Homepage", href: "/admin/settings", icon: Settings },
+    { label: "Navbar", href: "/admin/settings/navbar", icon: Globe },
+    { label: "Footer", href: "/admin/settings/footer", icon: Megaphone },
+    { label: "Company", href: "/admin/settings/company", icon: Building2 },
+    { label: "SEO", href: "/admin/settings/seo", icon: FileText },
+    { label: "System", href: "/admin/settings/system", icon: Monitor },
+  ];
+
 
   return (
     <div className="min-h-screen flex bg-background text-foreground">
       {/* Sidebar Navigation */}
       <aside className="w-64 border-r border-border bg-bg-elevated hidden md:flex flex-col justify-between p-6 h-screen sticky top-0">
-        <div className="space-y-8">
+        <div className="space-y-6">
           {/* Logo */}
           <Link href="/" className="font-extrabold text-xl tracking-tight block">
             Social<span className="text-brand-lime">ties</span> Admin
           </Link>
 
-          {/* Links */}
-          <nav className="flex flex-col space-y-2">
+          {/* Main Nav */}
+          <nav className="flex flex-col space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-background hover:text-brand-lime text-sm font-semibold transition-all text-fg-muted"
-                >
-                  <Icon size={18} />
+                <Link key={item.href} href={item.href}
+                  className="flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-background hover:text-brand-lime text-sm font-semibold transition-all text-fg-muted">
+                  <Icon size={16} />
                   <span>{item.label}</span>
                 </Link>
               );
             })}
           </nav>
+
+          {/* Settings Group */}
+          <div>
+            <p className="px-4 text-[10px] font-bold uppercase tracking-widest text-fg-muted/50 mb-2">Content Pages</p>
+            <nav className="flex flex-col space-y-1">
+              {contentItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link key={item.href} href={item.href}
+                    className="flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-background hover:text-brand-lime text-sm font-semibold transition-all text-fg-muted">
+                    <Icon size={16} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* Settings Group */}
+          <div>
+            <p className="px-4 text-[10px] font-bold uppercase tracking-widest text-fg-muted/50 mb-2">CMS Settings</p>
+            <nav className="flex flex-col space-y-1">
+              {settingsItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link key={item.href} href={item.href}
+                    className="flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-background hover:text-brand-lime text-sm font-semibold transition-all text-fg-muted">
+                    <Icon size={16} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
         </div>
 
         {/* Footer actions / User profiles */}

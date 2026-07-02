@@ -6,10 +6,18 @@ import { auth } from "@/auth";
 export async function updateHomepageSettings(data: {
   heroHeadline: string;
   heroSubheading: string;
+  heroEyebrow?: string;
+  heroPrimaryBtnText?: string;
+  heroPrimaryBtnHref?: string;
+  heroSecondaryBtnText?: string;
+  heroSecondaryBtnHref?: string;
   statCampaigns: number;
   statBrands: number;
   statCreators: number;
   statReach: number;
+  whyHeadline?: string;
+  whySubtext?: string;
+  whyBadges?: Array<{ label: string; color: string }>;
 }) {
   try {
     const session = await auth();

@@ -1,299 +1,358 @@
 "use client";
 
-import { useState } from "react";
-import { createCampaign, deleteCampaign } from "@/app/admin/(protected)/campaigns/_actions/campaigns";
-import { Plus, Trash2, X } from "lucide-react";
-import { CampaignType } from "@/lib/types";
+import { useState, useTransition } from "react";
+import {
+  createCampaign, updateCampaign, deleteCampaign, toggleCampaignFeatured,
+} from "@/app/admin/(protected)/campaigns/_actions/campaigns";
+import { Plus, Trash2, X, Pencil, Star, StarOff, Eye } from "lucide-react";
+import { CampaignType, CampaignStatus } from "@/lib/types";
+import Link from "next/link";
+import ImageUploader from "@/components/admin/ui/ImageUploader";
 
 interface Campaign {
   id: string;
   brandName: string;
   slug: string;
   type: string;
+  status: string;
   platforms: string[];
-  reachTotal: bigint | null;
+  reachTotal: string | null;
   budgetTier: string | null;
+  featured: boolean;
+  title: string | null;
+  client: string | null;
+  budget: number | null;
+  category: string | null;
+  coverImageUrl: string | null;
+  brief: string | null;
+  strategy: string | null;
+  resultsNote: string | null;
+  tags: string[];
+  ctaText: string | null;
+  ctaLink: string | null;
 }
 
-interface CampaignsCrudClientProps {
-  initialCampaigns: Campaign[];
+const PLATFORMS = ["INSTAGRAM", "YOUTUBE", "FACEBOOK", "TWITTER", "LINKEDIN", "TIKTOK"];
+
+const emptyForm = {
+  brandName: "", slug: "", type: "PRODUCT_LAUNCH" as CampaignType,
+  status: "DRAFT" as CampaignStatus,
+  platforms: [] as string[],
+  reachTotal: "", budgetTier: "", coverImageUrl: "", coverImagePublicId: "",
+  brief: "", strategy: "", resultsNote: "",
+  title: "", client: "", budget: "", category: "",
+  tags: "", ctaText: "", ctaLink: "",
+  featured: false,
+};
+
+type FormState = typeof emptyForm;
+
+function CampaignFormModal({
+  title, initialForm, onSubmit, onClose, submitting,
+}: {
+  title: string;
+  initialForm: FormState;
+  onSubmit: (form: FormState) => void;
+  onClose: () => void;
+  submitting: boolean;
+}) {
+  const [form, setForm] = useState<FormState>(initialForm);
+  const set = (key: keyof FormState, val: any) => setForm((f) => ({ ...f, [key]: val }));
+
+  const togglePlat = (p: string) =>
+    set("platforms", form.platforms.includes(p) ? form.platforms.filter((x) => x !== p) : [...form.platforms, p]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-bg-elevated border border-border max-w-2xl w-full rounded-3xl p-6 sm:p-8 relative shadow-2xl max-h-[92vh] overflow-y-auto space-y-5">
+        <button onClick={onClose} className="absolute top-4 right-4 p-2 text-fg-muted hover:text-foreground rounded-full border border-border hover:bg-background transition-colors">
+          <X size={16} />
+        </button>
+        <h3 className="text-2xl font-black text-foreground">{title}</h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+          {/* Row 1 */}
+          <Field label="Brand Name *"><input required value={form.brandName} onChange={(e) => set("brandName", e.target.value)} className={input} /></Field>
+          <Field label="Slug *"><input required value={form.slug} onChange={(e) => set("slug", e.target.value)} placeholder="brand-launch-2026" className={input} /></Field>
+
+          {/* Row 2 */}
+          <Field label="Campaign Type *">
+            <select value={form.type} onChange={(e) => set("type", e.target.value as CampaignType)} className={input}>
+              {Object.values(CampaignType).map((t) => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}
+            </select>
+          </Field>
+          <Field label="Status">
+            <select value={form.status} onChange={(e) => set("status", e.target.value as CampaignStatus)} className={input}>
+              {Object.values(CampaignStatus).map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </Field>
+
+          {/* Row 3 */}
+          <Field label="Title (display name)"><input value={form.title} onChange={(e) => set("title", e.target.value)} className={input} /></Field>
+          <Field label="Client Name"><input value={form.client} onChange={(e) => set("client", e.target.value)} className={input} /></Field>
+
+          {/* Row 4 */}
+          <Field label="Budget Tier (display)"><input value={form.budgetTier} onChange={(e) => set("budgetTier", e.target.value)} placeholder="₹5L - ₹10L" className={input} /></Field>
+          <Field label="Reach (number)"><input type="number" value={form.reachTotal} onChange={(e) => set("reachTotal", e.target.value)} placeholder="10000000" className={input} /></Field>
+
+          {/* Row 5 */}
+          <Field label="Category"><input value={form.category} onChange={(e) => set("category", e.target.value)} placeholder="Lifestyle, Tech..." className={input} /></Field>
+          <Field label="Budget (₹ amount)"><input type="number" value={form.budget} onChange={(e) => set("budget", e.target.value)} className={input} /></Field>
+
+          {/* Row 6 */}
+          <Field label="CTA Text"><input value={form.ctaText} onChange={(e) => set("ctaText", e.target.value)} placeholder="View Campaign" className={input} /></Field>
+          <Field label="CTA Link"><input value={form.ctaLink} onChange={(e) => set("ctaLink", e.target.value)} placeholder="https://..." className={input} /></Field>
+
+          {/* Cover image — upload instead of URL */}
+          <div className="sm:col-span-2">
+            <ImageUploader
+              label="Cover Image"
+              folder="campaigns"
+              value={form.coverImageUrl || null}
+              publicId={form.coverImagePublicId || null}
+              onChange={(url, publicId) => { set("coverImageUrl", url); set("coverImagePublicId", publicId); }}
+              onRemove={() => { set("coverImageUrl", ""); set("coverImagePublicId", ""); }}
+            />
+          </div>
+
+          {/* Tags */}
+          <div className="sm:col-span-2">
+            <Field label="Tags (comma separated)"><input value={form.tags} onChange={(e) => set("tags", e.target.value)} placeholder="fashion, beauty, lifestyle" className={input} /></Field>
+          </div>
+
+          {/* Platforms */}
+          <div className="sm:col-span-2 space-y-2">
+            <label className={label}>Platforms *</label>
+            <div className="flex flex-wrap gap-2">
+              {PLATFORMS.map((p) => (
+                <button key={p} type="button" onClick={() => togglePlat(p)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${form.platforms.includes(p) ? "bg-brand-lime text-black border-brand-lime" : "border-border text-fg-muted hover:border-brand-lime/40"}`}>
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Brief */}
+          <div className="sm:col-span-2">
+            <Field label="The Brief"><textarea rows={2} value={form.brief} onChange={(e) => set("brief", e.target.value)} className={textarea} /></Field>
+          </div>
+          <div className="sm:col-span-2">
+            <Field label="The Strategy"><textarea rows={2} value={form.strategy} onChange={(e) => set("strategy", e.target.value)} className={textarea} /></Field>
+          </div>
+          <div className="sm:col-span-2">
+            <Field label="Results Note"><textarea rows={2} value={form.resultsNote} onChange={(e) => set("resultsNote", e.target.value)} className={textarea} /></Field>
+          </div>
+
+          {/* Featured toggle */}
+          <div className="sm:col-span-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={form.featured} onChange={(e) => set("featured", e.target.checked)} className="accent-brand-lime w-4 h-4" />
+              <span className="text-sm font-semibold">Featured on homepage</span>
+            </label>
+          </div>
+        </div>
+
+        <button
+          onClick={() => onSubmit(form)}
+          disabled={submitting || form.platforms.length === 0}
+          className="w-full py-3.5 bg-brand-lime hover:bg-brand-lime-dark text-black font-bold uppercase tracking-wider rounded-xl transition-all flex items-center justify-center shadow-lg shadow-brand-lime/10 disabled:opacity-50">
+          {submitting ? "Saving..." : "Save Campaign"}
+        </button>
+      </div>
+    </div>
+  );
 }
 
-export default function CampaignsCrudClient({ initialCampaigns }: CampaignsCrudClientProps) {
+const input = "w-full px-4 py-2.5 bg-background border border-border rounded-xl focus:outline-none focus:border-brand-lime text-sm";
+const textarea = "w-full px-4 py-2.5 bg-background border border-border rounded-xl focus:outline-none focus:border-brand-lime text-sm resize-none";
+const label = "text-xs font-semibold text-fg-muted uppercase tracking-wider block mb-1.5";
+function Field({ label: l, children }: { label: string; children: React.ReactNode }) {
+  return <div><label className={label}>{l}</label>{children}</div>;
+}
+
+function campaignToForm(c: Campaign): FormState {
+  return {
+    brandName: c.brandName,
+    slug: c.slug,
+    type: c.type as CampaignType,
+    status: c.status as CampaignStatus,
+    platforms: c.platforms,
+    reachTotal: c.reachTotal ?? "",
+    budgetTier: c.budgetTier ?? "",
+    coverImageUrl: c.coverImageUrl ?? "",
+    coverImagePublicId: "",
+    brief: c.brief ?? "",
+    strategy: c.strategy ?? "",
+    resultsNote: c.resultsNote ?? "",
+    title: c.title ?? "",
+    client: c.client ?? "",
+    budget: c.budget !== null ? String(c.budget) : "",
+    category: c.category ?? "",
+    tags: (c.tags ?? []).join(", "),
+    ctaText: c.ctaText ?? "",
+    ctaLink: c.ctaLink ?? "",
+    featured: c.featured,
+  };
+}
+
+function formToPayload(form: FormState) {
+  return {
+    ...form,
+    tags: form.tags ? form.tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
+    reachTotal: form.reachTotal ? Number(form.reachTotal) : undefined,
+    budget: form.budget ? Number(form.budget) : undefined,
+  };
+}
+
+export default function CampaignsCrudClient({ initialCampaigns }: { initialCampaigns: Campaign[] }) {
   const [campaigns, setCampaigns] = useState(initialCampaigns);
-  const [isOpen, setIsOpen] = useState(false);
-  const [brandName, setBrandName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [type, setType] = useState<CampaignType>("PRODUCT_LAUNCH");
-  const [platforms, setPlatforms] = useState<string[]>([]);
-  const [reachTotal, setReachTotal] = useState("");
-  const [budgetTier, setBudgetTier] = useState("");
-  const [coverImageUrl, setCoverImageUrl] = useState("");
-  const [brief, setBrief] = useState("");
-  const [strategy, setStrategy] = useState("");
-  const [resultsNote, setResultsNote] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [editCampaign, setEditCampaign] = useState<Campaign | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const handleAddCampaign = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      const res = await createCampaign({
-        brandName,
-        slug,
-        type,
-        platforms,
-        reachTotal: reachTotal ? Number(reachTotal) : undefined,
-        budgetTier,
-        coverImageUrl,
-        brief,
-        strategy,
-        resultsNote,
-      });
-
+  const handleCreate = (form: FormState) => {
+    setErrorMsg(null);
+    startTransition(async () => {
+      const res = await createCampaign(formToPayload(form));
       if (res.success) {
+        setShowCreate(false);
         window.location.reload();
       } else {
-        alert(res.error || "Failed to create campaign");
+        setErrorMsg(res.error ?? "Failed to create");
       }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setSubmitting(false);
-    }
+    });
   };
 
-  const handleDeleteCampaign = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this campaign?")) return;
-    try {
-      const res = await deleteCampaign(id);
+  const handleUpdate = (form: FormState) => {
+    if (!editCampaign) return;
+    setErrorMsg(null);
+    startTransition(async () => {
+      const res = await updateCampaign(editCampaign.id, formToPayload(form));
       if (res.success) {
-        setCampaigns((prev) => prev.filter((c) => c.id !== id));
+        setEditCampaign(null);
+        window.location.reload();
       } else {
-        alert(res.error || "Failed to delete campaign");
+        setErrorMsg(res.error ?? "Failed to update");
       }
-    } catch (err) {
-      console.error(err);
-    }
+    });
   };
 
-  const togglePlatformSelection = (plat: string) => {
-    setPlatforms((prev) =>
-      prev.includes(plat) ? prev.filter((p) => p !== plat) : [...prev, plat]
-    );
+  const handleDelete = (id: string) => {
+    if (!confirm("Delete this campaign? It will be archived.")) return;
+    startTransition(async () => {
+      const res = await deleteCampaign(id);
+      if (res.success) setCampaigns((prev) => prev.filter((c) => c.id !== id));
+      else alert(res.error ?? "Delete failed");
+    });
+  };
+
+  const handleToggleFeatured = (c: Campaign) => {
+    startTransition(async () => {
+      const res = await toggleCampaignFeatured(c.id, !c.featured);
+      if (res.success) setCampaigns((prev) => prev.map((x) => x.id === c.id ? { ...x, featured: !c.featured } : x));
+    });
+  };
+
+  const statusColors: Record<string, string> = {
+    DRAFT: "bg-yellow-500/10 text-yellow-400",
+    LIVE: "bg-green-500/10 text-green-400",
+    COMPLETED: "bg-blue-500/10 text-blue-400",
+    ARCHIVED: "bg-fg-muted/10 text-fg-muted",
   };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold">Manage Campaigns</h2>
-        <button
-          onClick={() => setIsOpen(true)}
-          className="px-4 py-2.5 bg-brand-lime text-black hover:bg-brand-lime-dark font-semibold text-xs uppercase tracking-wider rounded-xl flex items-center space-x-2 transition-all shadow-md shadow-brand-lime/10"
-        >
-          <Plus size={14} />
-          <span>Add Campaign</span>
+        <h2 className="text-xl font-bold">Manage Campaigns ({campaigns.length})</h2>
+        <button onClick={() => setShowCreate(true)}
+          className="px-4 py-2.5 bg-brand-lime text-black hover:bg-brand-lime-dark font-semibold text-xs uppercase tracking-wider rounded-xl flex items-center gap-2 transition-all shadow-md shadow-brand-lime/10">
+          <Plus size={14} /> Add Campaign
         </button>
       </div>
 
+      {errorMsg && (
+        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm font-medium">{errorMsg}</div>
+      )}
+
       <div className="bg-bg-elevated border border-border rounded-3xl overflow-hidden shadow-sm">
-        <table className="w-full text-left border-collapse text-sm">
-          <thead>
-            <tr className="bg-background border-b border-border text-fg-muted uppercase tracking-wider font-semibold text-xs">
-              <th className="p-4">Brand</th>
-              <th className="p-4">Slug</th>
-              <th className="p-4">Type</th>
-              <th className="p-4">Platforms</th>
-              <th className="p-4">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border/10">
-            {campaigns.map((campaign) => (
-              <tr key={campaign.id} className="hover:bg-background/50 transition-colors">
-                <td className="p-4 font-bold text-foreground">{campaign.brandName}</td>
-                <td className="p-4">{campaign.slug}</td>
-                <td className="p-4 text-xs font-semibold">{campaign.type}</td>
-                <td className="p-4 text-xs">{campaign.platforms.join(", ")}</td>
-                <td className="p-4">
-                  <button
-                    onClick={() => handleDeleteCampaign(campaign.id)}
-                    className="p-2 border border-border text-red-500 hover:bg-red-500/10 rounded-xl transition-colors"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm min-w-[700px]">
+            <thead>
+              <tr className="bg-background border-b border-border text-fg-muted uppercase tracking-wider font-semibold text-xs">
+                <th className="p-4">Brand / Title</th>
+                <th className="p-4">Type</th>
+                <th className="p-4">Status</th>
+                <th className="p-4">Platforms</th>
+                <th className="p-4">Featured</th>
+                <th className="p-4">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-border/10">
+              {campaigns.length === 0 && (
+                <tr><td colSpan={6} className="p-8 text-center text-fg-muted text-sm">No campaigns yet. Create the first one.</td></tr>
+              )}
+              {campaigns.map((campaign) => (
+                <tr key={campaign.id} className="hover:bg-background/50 transition-colors">
+                  <td className="p-4">
+                    <p className="font-bold text-foreground">{campaign.brandName}</p>
+                    <p className="text-xs text-fg-muted font-mono">{campaign.slug}</p>
+                  </td>
+                  <td className="p-4 text-xs font-semibold text-fg-muted">{campaign.type.replace(/_/g, " ")}</td>
+                  <td className="p-4">
+                    <span className={`text-xs px-2 py-0.5 rounded-md font-bold ${statusColors[campaign.status] ?? ""}`}>
+                      {campaign.status}
+                    </span>
+                  </td>
+                  <td className="p-4 text-xs text-fg-muted">{campaign.platforms.join(", ")}</td>
+                  <td className="p-4">
+                    <button onClick={() => handleToggleFeatured(campaign)} disabled={isPending}
+                      className={`p-1.5 rounded-lg transition-colors ${campaign.featured ? "text-brand-lime bg-brand-lime/10" : "text-fg-muted hover:text-brand-lime"}`}>
+                      {campaign.featured ? <Star size={16} fill="currentColor" /> : <StarOff size={16} />}
+                    </button>
+                  </td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-2">
+                      <Link href={`/campaigns/${campaign.slug}`} target="_blank"
+                        className="p-2 border border-border text-fg-muted hover:text-brand-lime hover:border-brand-lime/40 rounded-xl transition-colors">
+                        <Eye size={14} />
+                      </Link>
+                      <button onClick={() => setEditCampaign(campaign)}
+                        className="p-2 border border-border text-fg-muted hover:text-blue-400 hover:border-blue-400/40 rounded-xl transition-colors">
+                        <Pencil size={14} />
+                      </button>
+                      <button onClick={() => handleDelete(campaign.id)} disabled={isPending}
+                        className="p-2 border border-border text-red-500 hover:bg-red-500/10 rounded-xl transition-colors">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Add campaign modal */}
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
-          <div className="bg-bg-elevated border border-border max-w-lg w-full rounded-3xl p-6 sm:p-8 relative shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => setIsOpen(false)}
-              className="absolute top-4 right-4 p-2 text-fg-muted hover:text-foreground rounded-full border border-border hover:bg-background transition-colors"
-            >
-              <X size={16} />
-            </button>
+      {showCreate && (
+        <CampaignFormModal
+          title="Add Campaign"
+          initialForm={emptyForm}
+          onSubmit={handleCreate}
+          onClose={() => setShowCreate(false)}
+          submitting={isPending}
+        />
+      )}
 
-            <h3 className="text-2xl font-black text-foreground">Add Campaign</h3>
-
-            <form onSubmit={handleAddCampaign} className="space-y-4 text-sm">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wider text-fg-muted">
-                  Brand Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={brandName}
-                  onChange={(e) => setBrandName(e.target.value)}
-                  className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-lime"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wider text-fg-muted">
-                  Slug (unique url path) *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
-                  placeholder="brand-launch-2026"
-                  className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-lime"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wider text-fg-muted">
-                  Campaign Type *
-                </label>
-                <select
-                  value={type}
-                  onChange={(e) => setType(e.target.value as CampaignType)}
-                  className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-lime"
-                >
-                  <option value="PRODUCT_LAUNCH">PRODUCT_LAUNCH</option>
-                  <option value="BRAND_AWARENESS">BRAND_AWARENESS</option>
-                  <option value="EVENT_PROMOTION">EVENT_PROMOTION</option>
-                  <option value="GIFTING">GIFTING</option>
-                  <option value="PERFORMANCE_ADS">PERFORMANCE_ADS</option>
-                  <option value="AMBASSADOR_PROGRAM">AMBASSADOR_PROGRAM</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wider text-fg-muted block">
-                  Platforms *
-                </label>
-                <div className="flex gap-4">
-                  {["INSTAGRAM", "YOUTUBE"].map((plat) => (
-                    <label key={plat} className="flex items-center space-x-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={platforms.includes(plat)}
-                        onChange={() => togglePlatformSelection(plat)}
-                        className="rounded border-border text-brand-lime focus:ring-brand-lime"
-                      />
-                      <span>{plat}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-fg-muted">
-                    Total Reach
-                  </label>
-                  <input
-                    type="number"
-                    value={reachTotal}
-                    onChange={(e) => setReachTotal(e.target.value)}
-                    placeholder="e.g. 10000000"
-                    className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-lime"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-fg-muted">
-                    Scale / Budget Tier
-                  </label>
-                  <input
-                    type="text"
-                    value={budgetTier}
-                    onChange={(e) => setBudgetTier(e.target.value)}
-                    placeholder="e.g. ₹5L - ₹10L"
-                    className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-lime"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wider text-fg-muted">
-                  Cover Image URL
-                </label>
-                <input
-                  type="text"
-                  value={coverImageUrl}
-                  onChange={(e) => setCoverImageUrl(e.target.value)}
-                  className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-lime"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wider text-fg-muted">
-                  The Brief
-                </label>
-                <textarea
-                  rows={2}
-                  value={brief}
-                  onChange={(e) => setBrief(e.target.value)}
-                  className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-lime"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wider text-fg-muted">
-                  The Strategy
-                </label>
-                <textarea
-                  rows={2}
-                  value={strategy}
-                  onChange={(e) => setStrategy(e.target.value)}
-                  className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-lime"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase tracking-wider text-fg-muted">
-                  Results Note
-                </label>
-                <textarea
-                  rows={2}
-                  value={resultsNote}
-                  onChange={(e) => setResultsNote(e.target.value)}
-                  className="w-full px-4 py-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-lime"
-                />
-              </div>
-
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={submitting || platforms.length === 0}
-                  className="w-full py-4 bg-brand-lime hover:bg-brand-lime-dark text-black font-bold uppercase tracking-wider rounded-xl transition-all flex items-center justify-center space-x-2 shadow-lg shadow-brand-lime/10 disabled:opacity-50"
-                >
-                  {submitting ? <span>Creating...</span> : <span>Save Campaign</span>}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {editCampaign && (
+        <CampaignFormModal
+          title={`Edit: ${editCampaign.brandName}`}
+          initialForm={campaignToForm(editCampaign)}
+          onSubmit={handleUpdate}
+          onClose={() => setEditCampaign(null)}
+          submitting={isPending}
+        />
       )}
     </div>
   );

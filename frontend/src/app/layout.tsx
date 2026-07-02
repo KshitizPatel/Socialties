@@ -7,6 +7,8 @@ import AuthProvider from "@/components/providers/auth-provider";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import WhatsAppButton from "@/components/layout/WhatsAppButton";
+import SystemBanner from "@/components/layout/SystemBanner";
+import { Toaster } from "react-hot-toast";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -34,10 +36,18 @@ export default function RootLayout({
         <ThemeProvider defaultTheme="dark">
           <AuthProvider>
             <LenisProvider>
+              <SystemBanner />
               <Navbar />
               <main className="flex-grow pt-[72px] md:pt-[88px]">{children}</main>
               <Footer />
               <WhatsAppButton />
+              <Toaster
+                position="bottom-right"
+                toastOptions={{
+                  style: { background: "#1a1a2e", color: "#fff", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px" },
+                  success: { iconTheme: { primary: "#CCFF00", secondary: "#000" } },
+                }}
+              />
             </LenisProvider>
           </AuthProvider>
         </ThemeProvider>
