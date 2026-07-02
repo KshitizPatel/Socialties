@@ -3,6 +3,9 @@ import cors from "cors";
 import dotenv from "dotenv";
 import rateLimit from "express-rate-limit";
 
+// Load environment variables FIRST, before any other imports
+dotenv.config();
+
 import authRouter from "./routes/auth";
 import dashboardRouter from "./routes/dashboard";
 import campaignsRouter from "./routes/campaigns";
@@ -20,8 +23,6 @@ import whyCardsRouter from "./routes/why-cards";
 import ctaSectionsRouter from "./routes/cta-sections";
 import uploadRouter from "./routes/upload";
 import { initializeSettings } from "./utils/initDb";
-
-dotenv.config();
 
 const app = express();
 // Render injects PORT; fallback to BACKEND_PORT for local dev
