@@ -121,7 +121,7 @@ router.get("/cta-sections", async (req, res) => {
   try {
     const sections = await db.ctaSection.findMany({ where: { isVisible: true } });
     const byKey: Record<string, any> = {};
-    sections.forEach((s) => { byKey[s.key] = s; });
+    sections.forEach((s: any) => { byKey[s.key] = s; });
     return res.json(byKey);
   } catch (error: any) {
     return res.status(500).json({ error: "Internal server error" });
