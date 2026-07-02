@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: socialties-backend
+    env: node
+    plan: free
+    buildCommand: cd backend && npm install && npm run build
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: NEXTAUTH_SECRET
+        sync: false
+      - key: ADMIN_EMAIL
+        value: admin@socialties.in
+      - key: ADMIN_PASSWORD_HASH
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: https://your-vercel-url.vercel.app,https://socialties.in
+      - key: BACKEND_URL
+        sync: false
+
+  - type: web
+    name: socialties-frontend
+    env: node
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
+    startCommand: cd frontend && npm start
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          name: socialties-backend
+          property: host
+      - key: NEXTAUTH_SECRET
+        sync: false
+      - key: NEXTAUTH_URL
+        value: https://your-vercel-url.vercel.app
